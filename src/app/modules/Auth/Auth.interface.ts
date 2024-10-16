@@ -3,7 +3,8 @@ export type TLoginRequest = {
   password: string;
 };
 
-export type TLoginResponse = {
-  user: string;
-  token: string;
+export type tokenPayload = {
+  email: string;
+  role: string;
+  name?: string;
 };

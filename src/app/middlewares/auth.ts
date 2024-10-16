@@ -10,7 +10,7 @@ import { User } from "../modules/User/User.model";
 interface customRequest extends Request {
   user: JwtPayload;
 }
-const authGuared = (...requiredRoles: TUserRole[]) => {
+const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(
     async (req: customRequest, res: Response, next: NextFunction) => {
       const bearrerToken = req.headers.authorization;
@@ -47,4 +47,4 @@ const authGuared = (...requiredRoles: TUserRole[]) => {
   );
 };
 
-export default authGuared;
+export default auth;
