@@ -1,26 +1,38 @@
-// /modules/User/User.interface.ts
-
-import { Model } from "mongoose";
-
-export type TUserRole = "admin" | "user";
+import mongoose, { Model } from "mongoose";
+import { USER_ROLE } from "./User.constant";
 
 export type TUser = {
+  _id?: string;
   name: string;
+  role?: keyof typeof USER_ROLE;
   email: string;
+  follower?: mongoose.Schema.Types.ObjectId[];
+  following?: mongoose.Schema.Types.ObjectId[];
+  upVotesItem?: mongoose.Schema.Types.ObjectId[];
+  downVotesItem?: mongoose.Schema.Types.ObjectId[];
+  verified?: boolean;
   password: string;
-  phone: string;
-  address: string;
-  role: TUserRole;
-  isDeleted: boolean;
-  followers: string[];
-  following: string[];
-  isVerified: boolean;
-  profilePicture?: string;
+  passwordChangedAt?: Date;
+  phoneNumber?: string;
+  profilePhoto?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  links?: {
+    socialName?: string;
+    url?: string;
+  }[];
+  address?: string;
+  isDeleted?: boolean;
 };
 
-export interface UserModel extends Model<TUser> {
+export interface IUserModel extends Model<TUser> {
+  isUserExistsByEmail(id: string): Promise<TUser>;
   isPasswordMatched(
     plainTextPassword: string,
-    hashPassword: string
+    hashedPassword: string
   ): Promise<boolean>;
+  isJWTIssuedBeforePasswordChanged(
+    passwordChangedTimestamp: Date,
+    jwtIssuedTimestamp: number
+  ): boolean;
 }

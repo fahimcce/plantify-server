@@ -1,61 +1,169 @@
 import httpStatus from "http-status";
-import config from "../../config";
-import { TUser } from "../User/User.interface";
-import { User } from "../User/User.model";
+import bcrypt from "bcryptjs";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import AppError from "../../errors/AppError";
-import { TLoginRequest, tokenPayload } from "./Auth.interface";
-import { createToken } from "./Auth.utils";
 
-const signUpIntoDb = async (payload: TUser) => {
-  const existingUser = await User.findOne({ email: payload.email });
-  if (existingUser) {
-    throw new AppError(
-      httpStatus.ALREADY_REPORTED,
-      "User already exists. Please login."
-    );
+import { TLoginUser, TregisterUser } from "./Auth.interface";
+import { User } from "../User/User.model";
+import config from "../../config";
+import { createToken } from "../../utils/verifyJWT";
+
+const registerUserDb = async (payload: TregisterUser) => {
+  const user = await User.isUserExistsByEmail(payload.email);
+  if (user) {
+    throw new AppError(httpStatus.NOT_FOUND, "This user already exist");
   }
-  return await User.create(payload);
-};
-
-const loginDb = async (payload: TLoginRequest) => {
-  const existingUser = await User.findOne({ email: payload.email });
-  if (!existingUser) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      `User not found with this email: ${payload.email}`
-    );
-  }
-
-  const passwordMatched = await User.isPasswordMatched(
-    payload.password,
-    existingUser.password
-  );
-  if (!passwordMatched) {
-    throw new AppError(httpStatus.FORBIDDEN, "Password does not match.");
-  }
-
-  const tokenPayload: tokenPayload = {
-    name: existingUser.name,
-    email: existingUser.email,
-    role: existingUser.role,
+  const newUser = await User.create(payload);
+  const tokenPayload = {
+    _id: newUser?._id,
+    name: newUser?.name,
+    email: newUser?.email,
+    phoneNumber: newUser?.phoneNumber,
+    role: newUser?.role,
+    verified: newUser?.verified,
   };
-
-  const token = createToken(
+  const accessToken = createToken(
     tokenPayload,
     config.Access_Token_Secret as string,
     config.JWT_ACCESS_EXPIRE_IN as string
   );
+  const refreshToken = createToken(
+    tokenPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string
+  );
+  return {
+    accessToken,
+    refreshToken,
+  };
+};
+const loginToDb = async (payload: TLoginUser) => {
+  // check if the user is exist
+  const user = await User.isUserExistsByEmail(payload.email);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "This user is not found!");
+  }
+  //checking if the password is correct
 
-  return { user: existingUser, token };
+  if (!(await User.isPasswordMatched(payload?.password, user?.password)))
+    throw new AppError(httpStatus.FORBIDDEN, "Password do not matched");
+
+  const tokenPayload = {
+    _id: user?._id,
+    name: user?.name,
+    email: user?.email,
+    phoneNumber: user?.phoneNumber,
+    role: user?.role,
+    verified: user?.verified,
+  };
+  const accessToken = createToken(
+    tokenPayload,
+    config.Access_Token_Secret as string,
+    config.JWT_ACCESS_EXPIRE_IN as string
+  );
+  const refreshToken = createToken(
+    tokenPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string
+  );
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
 
-// Fix the function parameter to accept an object with email property
-const getUserByEmail = async (email: string) => {
-  return await User.findOne({ email });
+const refreshTokenDb = async (token: string) => {
+  const decoded = jwt.verify(
+    token,
+    config.jwt_refresh_secret as string
+  ) as JwtPayload;
+  const { email, iat } = decoded;
+  const user = await User.isUserExistsByEmail(email);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "This user is not found!");
+  }
+  if (
+    user.passwordChangedAt &&
+    User.isJWTIssuedBeforePasswordChanged(user.passwordChangedAt, iat as number)
+  ) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized !");
+  }
+  const tokenPayload = {
+    _id: user?._id,
+    name: user?.name,
+    email: user?.email,
+    phoneNumber: user?.phoneNumber,
+    role: user?.role,
+    verified: user?.verified,
+  };
+  const accessToken = createToken(
+    tokenPayload,
+    config.Access_Token_Secret as string,
+    config.JWT_ACCESS_EXPIRE_IN as string
+  );
+  return accessToken;
+};
+
+// update user
+const updateUserDb = async (id: string, payload: TregisterUser) => {
+  const isUserExist = await User.findById(id);
+  if (!isUserExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found withh this is");
+  }
+
+  // check image new url added
+  if (!payload.profilePhoto) {
+    payload.profilePhoto = isUserExist?.profilePhoto;
+  }
+  const newUser = await User.findByIdAndUpdate(id, payload, {
+    new: true,
+    upsert: true,
+  });
+  return newUser;
+};
+
+// change password
+
+const changePassword = async (
+  userData: JwtPayload,
+  payload: { oldPassword: string; newPassword: string }
+) => {
+  // checking if the user is exist
+  const user = await User.isUserExistsByEmail(userData.email);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "This user is not found!");
+  }
+
+  //checking if the password is correct
+
+  if (!(await User.isPasswordMatched(payload.oldPassword, user?.password)))
+    throw new AppError(httpStatus.FORBIDDEN, "Password do not matched");
+
+  //hash new password
+  const newHashedPassword = await bcrypt.hash(
+    payload.newPassword,
+    Number(config.BCRYPT_SALT_ROUNDS)
+  );
+
+  await User.findOneAndUpdate(
+    {
+      email: userData.email,
+      role: userData.role,
+    },
+    {
+      password: newHashedPassword,
+      passwordChangedAt: new Date(),
+    }
+  );
+
+  return null;
 };
 
 export const authServices = {
-  signUpIntoDb,
-  loginDb,
-  getUserByEmail,
+  registerUserDb,
+  loginToDb,
+  refreshTokenDb,
+  updateUserDb,
+  changePassword,
 };

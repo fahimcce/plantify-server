@@ -1,23 +1,23 @@
 import express from "express";
-import { authRoutes } from "../modules/Auth/Auth.route";
-import { userRoutes } from "../modules/User/User.route";
-import { postRoutes } from "../modules/Post/Post.route";
+import { authRouter } from "../modules/Auth/Auth.route";
+import { userRoute } from "../modules/User/User.route";
 
 const router = express.Router();
 
 const moudleRoute = [
   {
     path: "/auth",
-    route: authRoutes,
+    route: authRouter,
   },
   {
-    path: "/users",
-    route: userRoutes,
+    path: "/user",
+    route: userRoute,
   },
-  {
-    path: "/posts",
-    route: postRoutes,
-  },
+
+  // {
+  //   path: "/posts",
+  //   route: postRoutes,
+  // },
 ];
 
 moudleRoute.forEach((route) => router.use(route.path, route.route));

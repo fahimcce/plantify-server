@@ -11,4 +11,15 @@ const validateRequest = (zodSchema: AnyZodObject) => {
     next();
   });
 };
+
+export const validateRequestCookies = (schema: AnyZodObject) => {
+  return catchAsync(async (req, res, next) => {
+    const parsedCookies = await schema.parseAsync({
+      cookies: req.cookies,
+    });
+    req.cookies = parsedCookies.cookies;
+    next();
+  });
+};
+
 export default validateRequest;

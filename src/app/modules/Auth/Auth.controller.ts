@@ -1,55 +1,63 @@
-import { Request, Response } from "express";
+import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { authServices } from "./Auth.service";
-import httpStatus from "http-status";
 
-const signUp = catchAsync(async (req: Request, res: Response) => {
-  const result = await authServices.signUpIntoDb(req.body);
+const registerUser = catchAsync(async (req, res) => {
+  const result = await authServices.registerUserDb(req.body);
   sendResponse(res, {
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     success: true,
-    message: "User registered successfully",
+    message: "User Register successfully",
+    data: result,
+  });
+});
+const loginUser = catchAsync(async (req, res) => {
+  const result = await authServices.loginToDb(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Login successfull",
     data: result,
   });
 });
 
-const login = catchAsync(async (req: Request, res: Response) => {
-  const result = await authServices.loginDb(req.body);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "User logged in successfully",
-    data: result?.user,
-    token: result?.token,
-  });
-});
-
-// Fix the function signature here
-const getOneUser = catchAsync(async (req: Request, res: Response) => {
-  const email = req.query.email as string; // Ensure the email is a string
-  const result = await authServices.getUserByEmail(email);
-
-  // Check if user exists
-  if (!result) {
-    return sendResponse(res, {
-      statusCode: httpStatus.NOT_FOUND,
-      success: false,
-      message: "User not found.",
-      data: null,
-    });
-  }
+const refreshToken = catchAsync(async (req, res) => {
+  const { refreshToken } = req.cookies;
+  const result = await authServices.refreshTokenDb(refreshToken);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User retrieved successfully",
+    message: "Access token retrieved successfully!",
     data: result,
   });
 });
+// update user
+const updateUser = catchAsync(async (req, res) => {
+  const result = await authServices.updateUserDb(req.params.id, req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Updated successfully",
+    data: result,
+  });
+});
+const changePassword = catchAsync(async (req, res) => {
+  const { ...passwordData } = req.body;
 
+  const result = await authServices.changePassword(req.user, passwordData);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Password updated successfully!",
+    data: result,
+  });
+});
 export const authController = {
-  signUp,
-  login,
-  getOneUser,
+  registerUser,
+  loginUser,
+  refreshToken,
+  updateUser,
+  changePassword,
 };

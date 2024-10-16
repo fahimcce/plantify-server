@@ -1,23 +1,43 @@
-import express from "express";
+import { Router } from "express";
+import validateRequest, {
+  validateRequestCookies,
+} from "../../middlewares/validateRequest";
 import { authValidation } from "./Auth.validation";
-import validateRequest from "../../middlewares/validateRequest";
-import { userValidation } from "../User/User.validation";
 import { authController } from "./Auth.controller";
+import auth from "../../middlewares/auth";
+import { USER_ROLE } from "../User/User.constant";
 
-const router = express.Router();
-
+const router = Router();
 router.post(
-  "/signup",
-  validateRequest(userValidation.createUserValidationSchema),
-  authController.signUp
+  "/register",
+  validateRequest(authValidation.registerUserValidationSchema),
+  authController.registerUser
 );
-
 router.post(
   "/login",
-  validateRequest(authValidation.loginValidationSchema),
-  authController.login
+  validateRequest(authValidation.loginValidation),
+  authController.loginUser
 );
 
-router.get("/users", authController.getOneUser);
+router.post(
+  "/refresh-token",
+  validateRequestCookies(authValidation.refreshTokenValidation),
+  authController.refreshToken
+);
 
-export const authRoutes = router;
+// update user
+router.put(
+  "/update-user/:id",
+  auth(USER_ROLE.admin, USER_ROLE.user),
+  validateRequest(authValidation.updateUserValidationSchema),
+  authController.updateUser
+);
+
+router.post(
+  "/change-password",
+  auth(USER_ROLE.admin, USER_ROLE.user),
+  validateRequest(authValidation.changePasswordValidationSchema),
+  authController.changePassword
+);
+
+export const authRouter = router;
