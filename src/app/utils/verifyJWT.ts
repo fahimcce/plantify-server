@@ -15,6 +15,7 @@ export const createToken = (
   secret: string,
   expireIn: string
 ) => {
+  console.log(expireIn);
   return jwt.sign(tokenPayload, secret, { expiresIn: expireIn });
 };
 

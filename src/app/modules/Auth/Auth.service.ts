@@ -9,6 +9,8 @@ import config from "../../config";
 import { createToken } from "../../utils/verifyJWT";
 
 const registerUserDb = async (payload: TregisterUser) => {
+  console.log(config.JWT_ACCESS_EXPIRE_IN); // should output '1d'
+  console.log(config.jwt_refresh_expires_in); // should output '365d'
   const user = await User.isUserExistsByEmail(payload.email);
   if (user) {
     throw new AppError(httpStatus.NOT_FOUND, "This user already exist");
@@ -38,6 +40,9 @@ const registerUserDb = async (payload: TregisterUser) => {
   };
 };
 const loginToDb = async (payload: TLoginUser) => {
+  console.log(config.JWT_ACCESS_EXPIRE_IN); // should output '1d'
+  console.log(config.jwt_refresh_expires_in); // should output '365d'
+
   // check if the user is exist
   const user = await User.isUserExistsByEmail(payload.email);
   if (!user) {
