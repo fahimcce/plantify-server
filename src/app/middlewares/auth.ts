@@ -8,7 +8,7 @@ import { verifyToken } from "../utils/verifyJWT";
 import config from "../config";
 import { User } from "../modules/User/User.model";
 
-const authGaurd = (...requiredRoles: (keyof typeof USER_ROLE)[]) => {
+const auth = (...requiredRoles: (keyof typeof USER_ROLE)[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.authorization;
     // check if the token is missing
@@ -39,4 +39,4 @@ const authGaurd = (...requiredRoles: (keyof typeof USER_ROLE)[]) => {
   });
 };
 
-export default authGaurd;
+export default auth;

@@ -2,6 +2,7 @@ import express from "express";
 import { authRouter } from "../modules/Auth/Auth.route";
 import { userRoute } from "../modules/User/User.route";
 import { postRouter } from "../modules/Post/Post.route";
+import { categoryRouter } from "../modules/Category/Category.route";
 
 const router = express.Router();
 
@@ -17,6 +18,10 @@ const moudleRoute = [
   {
     path: "/post",
     route: postRouter,
+  },
+  {
+    path: "/category",
+    route: categoryRouter,
   },
 ];
 
