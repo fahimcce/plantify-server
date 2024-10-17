@@ -1,6 +1,7 @@
 import express from "express";
 import { authRouter } from "../modules/Auth/Auth.route";
 import { userRoute } from "../modules/User/User.route";
+import { postRouter } from "../modules/Post/Post.route";
 
 const router = express.Router();
 
@@ -13,11 +14,10 @@ const moudleRoute = [
     path: "/user",
     route: userRoute,
   },
-
-  // {
-  //   path: "/posts",
-  //   route: postRoutes,
-  // },
+  {
+    path: "/post",
+    route: postRouter,
+  },
 ];
 
 moudleRoute.forEach((route) => router.use(route.path, route.route));

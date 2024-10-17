@@ -1,45 +1,175 @@
-import httpStatus from "http-status";
+import mongoose from "mongoose";
 import { TPost } from "./Post.interface";
 import { Post } from "./Post.model";
+import QueryBuilder from "../../builder/QueryBuilder";
+import { User } from "../User/User.model";
 import AppError from "../../errors/AppError";
+import httpStatus from "http-status";
 
-const createPostInDb = async (payload: TPost) => {
-  const post = await Post.create(payload);
-  return post;
+const makePostDb = async (payload: TPost) => {
+  const result = await Post.create(payload);
+  return result;
+};
+const getAllPost = async (query: Record<string, unknown>) => {
+  const postQuerys = new QueryBuilder(
+    Post.find({ isDeleted: false }).populate("userId").populate("category"),
+    query
+  )
+    .search(["title", "post"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+    .filterByPremium();
+
+  const result = await postQuerys.modelQuery;
+  return result;
 };
 
-const getAllPostsFromDb = async () => {
-  return await Post.find().populate("author"); // You may customize this to filter or sort as needed
+const getVoteSummeryDb = async (id: string) => {
+  const result = await Post.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $project: {
+        _id: 0,
+        upVotes: {
+          $size: {
+            $filter: {
+              input: "$activity",
+              as: "activity",
+              cond: { $eq: ["$$activity.votes", true] },
+            },
+          },
+        },
+        downVotes: {
+          $size: {
+            $filter: {
+              input: "$activity",
+              as: "activity",
+              cond: { $eq: ["$$activity.votes", false] },
+            },
+          },
+        },
+      },
+    },
+  ]);
+  return result[0];
 };
 
-const getPostByIdFromDb = async (id: string) => {
-  const post = await Post.findById(id).populate("author");
-  if (!post) {
-    throw new AppError(httpStatus.NOT_FOUND, "Post not found.");
+// get post by id
+const getPostByidDb = async (id: string) => {
+  return await Post.findById(id)
+    .populate("userId")
+    .populate("category")
+    .populate("activity.userId")
+    .sort("createdAt");
+};
+const getPostByUserIdDb = async (id: string) => {
+  const result = await Post.find({ userId: id, isDeleted: false })
+    .populate("userId")
+    .populate("category")
+    .populate("activity.userId");
+  return result;
+};
+const handleVote = async (
+  postId: string,
+  payload: { userId: string; votes: boolean }
+) => {
+  const postExist = await Post.findById(postId);
+  const userExist = await User.findById(payload.userId);
+  if (!postExist || !userExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Post or User not found");
   }
-  return post;
-};
+  const userAlreadyVoted = await Post.find({
+    _id: postId,
+    "activity.userId": payload.userId,
+  });
 
-const updatePostInDb = async (id: string, payload: Partial<TPost>) => {
-  const post = await Post.findByIdAndUpdate(id, payload, { new: true });
-  if (!post) {
-    throw new AppError(httpStatus.NOT_FOUND, "Post not found.");
+  if (!userAlreadyVoted.length) {
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: { activity: { userId: payload.userId, votes: payload.votes } },
+      },
+      { new: true }
+    );
+    return { message: "voted successfully" };
   }
-  return post;
+  await Post.findOneAndUpdate(
+    { _id: postId, "activity.userId": payload.userId },
+    { $set: { "activity.$.votes": payload.votes } },
+    { new: true }
+  );
+  return { message: "voted successfully" };
 };
 
-const deletePostInDb = async (id: string) => {
-  const post = await Post.findByIdAndDelete(id);
-  if (!post) {
-    throw new AppError(httpStatus.NOT_FOUND, "Post not found.");
+const addComment = async (
+  postId: string,
+  payload: { userId: string; comment: string }
+) => {
+  const postExist = await Post.findById(postId);
+  const userExist = await User.findById(payload.userId);
+
+  if (!postExist || !userExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Post or User not found");
   }
-  return post;
+
+  const userAlreadyCommented = await Post.findOne({
+    _id: postId,
+    "activity.userId": payload.userId,
+  });
+
+  if (!userAlreadyCommented) {
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: {
+          activity: { userId: payload.userId, comment: [payload.comment] },
+        },
+      },
+      { new: true }
+    );
+    return { message: "Comment added successfully" };
+  }
+
+  await Post.findOneAndUpdate(
+    { _id: postId, "activity.userId": payload.userId },
+    {
+      $push: { "activity.$.comment": [payload.comment] },
+    },
+    { new: true }
+  );
+
+  return { message: "Comment updated successfully" };
+};
+const updatePostDb = async (postId: string, payload: TPost) => {
+  const result = await Post.findByIdAndUpdate(postId, payload, {
+    new: true,
+    runValidators: true,
+  });
+  return result;
+};
+const deletePost = async (postId: string) => {
+  const result = await Post.findByIdAndUpdate(
+    postId,
+    { isDeleted: true },
+    { new: true, runValidators: true }
+  );
+  return result;
 };
 
-export const postServices = {
-  createPostInDb,
-  getAllPostsFromDb,
-  getPostByIdFromDb,
-  updatePostInDb,
-  deletePostInDb,
+const getTotalPostCount = async () => {
+  return await Post.countDocuments({ isDeleted: { $ne: true } });
+};
+export const postService = {
+  makePostDb,
+  getAllPost,
+  getVoteSummeryDb,
+  getPostByidDb,
+  getPostByUserIdDb,
+  handleVote,
+  addComment,
+  updatePostDb,
+  deletePost,
+  getTotalPostCount,
 };

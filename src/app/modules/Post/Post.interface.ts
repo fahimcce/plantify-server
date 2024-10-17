@@ -1,18 +1,15 @@
-import { Model, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 export type TPost = {
   title: string;
-  content: string;
-  author: Types.ObjectId;
-  tags: string[];
-  upvotes: number;
-  downvotes: number;
-  isPremium: boolean;
-  image: string;
-  createdAt: Date;
-  updatedAt: Date;
+  post: any;
+  userId: Schema.Types.ObjectId;
+  activity?: {
+    userId?: mongoose.Schema.Types.ObjectId;
+    comment?: string[];
+    votes?: boolean;
+  }[];
+  category: mongoose.Schema.Types.ObjectId;
+  premium?: boolean;
+  isDeleted?: boolean;
 };
-
-export interface PostModel extends Model<TPost> {
-  calculateUpvotes(): number;
-}

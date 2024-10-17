@@ -1,28 +1,35 @@
-// /modules/Post/Post.validation.ts
-
 import { z } from "zod";
 
-const createPostValidationSchema = z.object({
-  body: z.object({
-    title: z.string().min(1, "Title is required"),
-    content: z.string().min(1, "Content is required"),
-    tags: z.array(z.string()).optional(),
-    isPremium: z.boolean().optional(),
-    image: z.string().url(),
-  }),
+export const postValidationSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  post: z.any(),
+  userId: z.string({ required_error: "User id required" }),
+  activity: z
+    .array(
+      z.object({
+        userId: z
+          .string()
+          .min(1, "User ID is required for activity")
+          .optional(),
+        votes: z.boolean().optional(),
+        comment: z.array(z.string().min(1, "Comment is required")).optional(),
+      })
+    )
+    .optional(),
+  category: z.string({ required_error: "Post category is required" }),
+  premium: z.boolean().optional(),
+  isDeleted: z.boolean().optional(),
 });
 
-const updatePostValidationSchema = z.object({
-  body: z.object({
-    title: z.string().optional(),
-    content: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    isPremium: z.boolean().optional(),
-    image: z.string().url().optional(),
-  }),
-});
+export const postUpdateValidationSchema = z.object({
+  title: z.string().min(1, "Title is required").optional(),
+  post: z.any().optional(),
+  userId: z.string({ required_error: "User id required" }).optional(),
 
-export const postValidation = {
-  createPostValidationSchema,
-  updatePostValidationSchema,
-};
+  category: z
+    .string({ required_error: "Post category is required" })
+    .optional(),
+  premium: z.boolean().optional(),
+  isDeleted: z.boolean().optional(),
+});
+export type TPost = z.infer<typeof postUpdateValidationSchema>;

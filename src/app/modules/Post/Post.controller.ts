@@ -1,42 +1,78 @@
-import { Request, Response } from "express";
-
 import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { postServices } from "./Post.service";
+import { postService } from "./Post.service";
 
-const createPost = catchAsync(async (req: Request, res: Response) => {
-  const result = await postServices.createPostInDb(req.body);
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "Post created successfully",
-    data: result,
-  });
-});
-
-const getAllPosts = catchAsync(async (req: Request, res: Response) => {
-  const result = await postServices.getAllPostsFromDb();
+const makePost = catchAsync(async (req, res) => {
+  const result = await postService.makePostDb(req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Posts retrieved successfully",
+    message: "Post Created successfully",
     data: result,
   });
 });
 
-const getPostById = catchAsync(async (req: Request, res: Response) => {
-  const result = await postServices.getPostByIdFromDb(req.params.id);
+const getPosts = catchAsync(async (req, res) => {
+  const result = await postService.getAllPost(req.query);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Post retrieved successfully",
+    message: "Posts retrive successfully",
     data: result,
   });
 });
 
-const updatePost = catchAsync(async (req: Request, res: Response) => {
-  const result = await postServices.updatePostInDb(req.params.id, req.body);
+const postVoteSummery = catchAsync(async (req, res) => {
+  const result = await postService.getVoteSummeryDb(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Upvotes and dowVotes retrive",
+    data: result,
+  });
+});
+
+// get post by id
+const getPostByid = catchAsync(async (req, res) => {
+  const result = await postService.getPostByidDb(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Post retrive successfully",
+    data: result,
+  });
+});
+// get post by userId
+const getPostByUserId = catchAsync(async (req, res) => {
+  const result = await postService.getPostByUserIdDb(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Post retrive successfully",
+    data: result,
+  });
+});
+const handleVoting = catchAsync(async (req, res) => {
+  const result = await postService.handleVote(req.params.postId, req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result?.message,
+    data: null,
+  });
+});
+const addComments = catchAsync(async (req, res) => {
+  const result = await postService.addComment(req.params.postId, req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result?.message,
+    data: null,
+  });
+});
+const updatePost = catchAsync(async (req, res) => {
+  const result = await postService.updatePostDb(req.params.postId, req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -44,9 +80,8 @@ const updatePost = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-
-const deletePost = catchAsync(async (req: Request, res: Response) => {
-  const result = await postServices.deletePostInDb(req.params.id);
+const deletePostId = catchAsync(async (req, res) => {
+  const result = await postService.deletePost(req.params.postId);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -54,11 +89,24 @@ const deletePost = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-
+const postCount = catchAsync(async (req, res) => {
+  const result = await postService.getTotalPostCount();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Total post count got",
+    data: result,
+  });
+});
 export const postController = {
-  createPost,
-  getAllPosts,
-  getPostById,
+  makePost,
+  getPosts,
+  postVoteSummery,
+  getPostByid,
+  getPostByUserId,
+  handleVoting,
+  addComments,
   updatePost,
-  deletePost,
+  deletePostId,
+  postCount,
 };

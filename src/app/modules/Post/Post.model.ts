@@ -1,23 +1,39 @@
 import { model, Schema } from "mongoose";
-import { TPost, PostModel } from "./Post.interface";
+import { TPost } from "./Post.interface";
 
-const PostSchema = new Schema<TPost, PostModel>(
+const postSchema = new Schema<TPost>(
   {
-    title: { type: String, required: true },
-    content: { type: String, required: true },
-    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    tags: [{ type: String }],
-    upvotes: { type: Number, default: 0 },
-    downvotes: { type: Number, default: 0 },
-    isPremium: { type: Boolean, default: false },
-    image: { type: String, required: true },
+    title: { type: String, require: true },
+    post: {
+      type: String,
+    },
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    activity: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: "User" },
+        comment: [{ type: String }],
+        votes: { type: Boolean, default: false },
+        _id: false,
+      },
+    ],
+    category: {
+      type: Schema.Types.ObjectId,
+      required: [true, "Post category is required"],
+      ref: "Category",
+    },
+    premium: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// Method to calculate total upvotes
-PostSchema.methods.calculateUpvotes = function () {
-  return this.upvotes - this.downvotes;
-};
+postSchema.virtual("upVotes").get(function (this: TPost) {
+  return this.activity?.filter((act) => act.votes === true);
+});
+postSchema.virtual("downVotes").get(function (this: TPost) {
+  return this.activity?.filter((act) => act.votes === false);
+});
 
-export const Post = model<TPost, PostModel>("Post", PostSchema);
+postSchema.set("toJSON", { virtuals: true });
+
+export const Post = model<TPost>("Post", postSchema);

@@ -1,33 +1,40 @@
-import express from "express";
+import { Router } from "express";
 import auth from "../../middlewares/auth";
 import { USER_ROLE } from "../User/User.constant";
-import validateRequest from "../../middlewares/validateRequest";
-import { postValidation } from "./Post.validation";
 import { postController } from "./Post.controller";
+import validateRequest from "../../middlewares/validateRequest";
+import { postUpdateValidationSchema } from "./Post.validation";
 
-const router = express.Router();
-
+const router = Router();
 router.post(
   "/",
-  validateRequest(postValidation.createPostValidationSchema),
-  postController.createPost
+  auth(USER_ROLE.user, USER_ROLE.admin),
+  postController.makePost
 );
-
-router.get("/", postController.getAllPosts);
-
-router.get("/:id", postController.getPostById);
-
+router.get("/", postController.getPosts);
+router.get("/total-post", postController.postCount);
+router.get("/:id", postController.getPostByid);
+router.get("/postby-user/:id", postController.getPostByUserId);
+router.get("/voteSummery/:id", postController.postVoteSummery);
 router.put(
-  "/:id",
-  auth(USER_ROLE.admin), // Or the appropriate role that can update a post
-  validateRequest(postValidation.updatePostValidationSchema),
+  "/handle-voting/:postId",
+  auth(USER_ROLE.admin, USER_ROLE.user),
+  postController.handleVoting
+);
+router.put(
+  "/handle-comment/:postId",
+  auth(USER_ROLE.admin, USER_ROLE.user),
+  postController.addComments
+);
+router.put(
+  "/update-post/:postId",
+  auth(USER_ROLE.user, USER_ROLE.admin),
+  validateRequest(postUpdateValidationSchema),
   postController.updatePost
 );
-
 router.delete(
-  "/:id",
-  auth(USER_ROLE.admin), // Or the appropriate role that can delete a post
-  postController.deletePost
+  "/delete/:postId",
+  auth(USER_ROLE.user, USER_ROLE.admin),
+  postController.deletePostId
 );
-
-export const postRoutes = router;
+export const postRouter = router;
