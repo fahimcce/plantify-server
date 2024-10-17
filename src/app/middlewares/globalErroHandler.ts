@@ -1,5 +1,4 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from "express";
-
 import { ZodError } from "zod";
 import { TErrorSources } from "../interface/error";
 import handleZodError from "../errors/handleZodError";
@@ -14,8 +13,9 @@ const globalErrorhandler: ErrorRequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  let statusCode = err.statusCode ? err.statusCode : 500;
+): void => {
+  // Return type explicitly set to void
+  let statusCode = err.statusCode || 500;
   let message = "Something went wrong";
   let errorMessages: TErrorSources = [
     {
@@ -25,15 +25,15 @@ const globalErrorhandler: ErrorRequestHandler = (
   ];
 
   if (err instanceof ZodError) {
-    const simpliFiedzodError = handleZodError(err);
-    statusCode = simpliFiedzodError.statusCode;
-    message = simpliFiedzodError.message;
-    errorMessages = simpliFiedzodError?.errorSource;
+    const simplifiedZodError = handleZodError(err);
+    statusCode = simplifiedZodError.statusCode;
+    message = simplifiedZodError.message;
+    errorMessages = simplifiedZodError?.errorSource;
   } else if (err?.name === "ValidationError") {
-    const simpliFiedError = handleValidationError(err);
-    statusCode = simpliFiedError.statusCode;
-    message = simpliFiedError.message;
-    errorMessages = simpliFiedError.errorSource;
+    const simplifiedError = handleValidationError(err);
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
+    errorMessages = simplifiedError.errorSource;
   } else if (err?.name === "CastError") {
     const simplifiedError = handleCastError(err);
     statusCode = simplifiedError.statusCode;
@@ -55,21 +55,24 @@ const globalErrorhandler: ErrorRequestHandler = (
   }
 
   if (err instanceof AppError) {
-    return res.status(statusCode).json({
+    res.status(statusCode).json({
       success: false,
       statusCode: statusCode,
       message,
       data: [],
       // stack: config.NODE_ENV === "development" && err?.stack,
     });
+    return; // Ensure the function exits here after sending a response.
   }
-  return res.status(statusCode).json({
+
+  res.status(statusCode).json({
     success: false,
     message,
     errorMessages,
     err,
     stack: config.NODE_ENV === "development" && err?.stack,
   });
+  return; // Ensure the function exits here after sending a response.
 };
 
 export default globalErrorhandler;

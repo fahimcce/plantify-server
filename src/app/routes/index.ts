@@ -3,6 +3,7 @@ import { authRouter } from "../modules/Auth/Auth.route";
 import { userRoute } from "../modules/User/User.route";
 import { postRouter } from "../modules/Post/Post.route";
 import { categoryRouter } from "../modules/Category/Category.route";
+import { paymentRoute } from "../modules/PaymentStoring/Payment.route";
 
 const router = express.Router();
 
@@ -22,6 +23,10 @@ const moudleRoute = [
   {
     path: "/category",
     route: categoryRouter,
+  },
+  {
+    path: "/payment",
+    route: paymentRoute,
   },
 ];
 

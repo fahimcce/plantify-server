@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.userRoute = void 0;
+const express_1 = require("express");
+const User_controller_1 = require("./User.controller");
+const auth_1 = __importDefault(require("../../middlewares/auth"));
+const User_constant_1 = require("./User.constant");
+const validateRequest_1 = __importDefault(require("../../middlewares/validateRequest"));
+const User_validation_1 = require("./User.validation");
+const router = (0, express_1.Router)();
+router.get("/", User_controller_1.userController.getAlluser);
+router.post("/confirm-payment", User_controller_1.userController.confirmPayment);
+router.get("/:email", (0, auth_1.default)(User_constant_1.USER_ROLE.user, User_constant_1.USER_ROLE.admin), User_controller_1.userController.getUserByEmail);
+router.get("/id/:id", User_controller_1.userController.getUserById);
+router.put("/follow-unfollow", (0, auth_1.default)(User_constant_1.USER_ROLE.admin, User_constant_1.USER_ROLE.user), (0, validateRequest_1.default)(User_validation_1.userValidation.followUnfollowValidationSchema), User_controller_1.userController.followUnfollow);
+router.delete("/delete/:userId", (0, auth_1.default)(User_constant_1.USER_ROLE.admin), User_controller_1.userController.deleteUser);
+router.patch("/user-admin/:userId", (0, auth_1.default)(User_constant_1.USER_ROLE.admin), User_controller_1.userController.makeAdminUser);
+exports.userRoute = router;
