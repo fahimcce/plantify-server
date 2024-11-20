@@ -1,17 +1,18 @@
-import { TErrorSources } from "../interface/error";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { TErrorSource } from "../interface/error";
 
 const handleDuplicateError = (err: any) => {
-  const erroSource: TErrorSources = [
+  const errorSource: TErrorSource = [
     {
       path: "",
-      message: `${err.errmsg} is already Exist`,
+      message: ` ${err?.errmsg} is already exist`,
     },
   ];
   const statusCode = 500;
   return {
     statusCode,
     message: err?.message,
-    erroSource: erroSource,
+    errorSource,
   };
 };
 export default handleDuplicateError;

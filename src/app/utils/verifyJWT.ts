@@ -1,6 +1,9 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { USER_ROLE } from "../modules/User/User.constant";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import AppError from "../errors/AppError";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { USER_ROLE } from "../moduls/User/user.constant";
 
 type TTokenElements = {
   _id?: string;
@@ -10,19 +13,11 @@ type TTokenElements = {
   role: keyof typeof USER_ROLE | undefined;
 };
 
-export const createToken = (
-  tokenPayload: TTokenElements,
-  secret: string,
-  expireIn: string
-) => {
-  console.log(expireIn);
+export const createToken = (tokenPayload: TTokenElements, secret: string, expireIn: string) => {
   return jwt.sign(tokenPayload, secret, { expiresIn: expireIn });
 };
 
-export const verifyToken = (
-  token: string,
-  secret: string
-): JwtPayload | Error => {
+export const verifyToken = (token: string, secret: string): JwtPayload | Error => {
   try {
     return jwt.verify(token, secret) as JwtPayload;
   } catch (error: any) {

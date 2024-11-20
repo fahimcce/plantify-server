@@ -1,11 +1,11 @@
 import { ZodError, ZodIssue } from "zod";
-import { TErrorSources } from "../interface/error";
+import { TErrorSource } from "../interface/error";
 
 const handleZodError = (err: ZodError) => {
-  const errorSource: TErrorSources = err?.issues?.map((issue: ZodIssue) => {
+  const errorSource: TErrorSource = err?.issues?.map((issue: ZodIssue) => {
     return {
       path: issue?.path[issue?.path?.length - 1],
-      message: issue.message,
+      message: issue?.message,
     };
   });
   const statusCode = 400;
@@ -15,4 +15,5 @@ const handleZodError = (err: ZodError) => {
     errorSource,
   };
 };
+
 export default handleZodError;

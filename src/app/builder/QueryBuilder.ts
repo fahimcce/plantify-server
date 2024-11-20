@@ -39,8 +39,7 @@ class QueryBuilder<T> {
   }
 
   sort() {
-    const sort =
-      (this?.query?.sort as string)?.split(",")?.join(" ") || "-createdAt";
+    const sort = (this?.query?.sort as string)?.split(",")?.join(" ") || "-createdAt";
     this.modelQuery = this.modelQuery.sort(sort as string);
 
     return this;
@@ -57,49 +56,41 @@ class QueryBuilder<T> {
   }
 
   fields() {
-    const fields =
-      (this?.query?.fields as string)?.split(",")?.join(" ") || "-__v";
+    const fields = (this?.query?.fields as string)?.split(",")?.join(" ") || "-__v";
 
     this.modelQuery = this.modelQuery.select(fields);
     return this;
   }
-
-  // Filter by category if provided
-  filterByCategory() {
+  // category
+  category() {
     if (this.query.category) {
-      this.modelQuery = this.modelQuery.where({
+      this.modelQuery = this.modelQuery.find({
         category: this.query.category,
       });
     }
     return this;
   }
-
-  // Filter by premium if provided
-  filterByPremium() {
+  // category
+  premium() {
     if (this.query.premium) {
-      this.modelQuery = this.modelQuery.where({
+      this.modelQuery = this.modelQuery.find({
         premium: this.query.premium,
       });
     }
     return this;
   }
-
-  // Count total documents and calculate pagination details
-  async calculatePagination() {
-    const queryFilters = this.modelQuery.getFilter();
-    const documentCount = await this.modelQuery.model.countDocuments(
-      queryFilters
-    );
-
-    const currentPage = Number(this?.query?.page) || 1;
-    const itemsPerPage = Number(this?.query?.limit) || 10;
-    const totalPages = Math.ceil(documentCount / itemsPerPage);
+  async countTotal() {
+    const totalQueries = this.modelQuery.getFilter();
+    const total = await this.modelQuery.model.countDocuments(totalQueries);
+    const page = Number(this?.query?.page) || 1;
+    const limit = Number(this?.query?.limit) || 10;
+    const totalPage = Math.ceil(total / limit);
 
     return {
-      currentPage,
-      itemsPerPage,
-      documentCount,
-      totalPages,
+      page,
+      limit,
+      total,
+      totalPage,
     };
   }
 }

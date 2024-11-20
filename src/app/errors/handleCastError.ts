@@ -1,18 +1,18 @@
 import mongoose from "mongoose";
-import { TErrorSources } from "../interface/error";
+import { TErrorSource } from "../interface/error";
 
 const handleCastError = (err: mongoose.Error.CastError) => {
-  const errorSource: TErrorSources = [
+  const errorSource: TErrorSource = [
     {
       path: err?.path,
-      message: err.message,
+      message: err?.message,
     },
   ];
   const statusCode = 500;
   return {
     statusCode,
-    message: "Invalid ID",
-    errorSource: errorSource,
+    message: "Invalid Id",
+    errorSource,
   };
 };
 export default handleCastError;

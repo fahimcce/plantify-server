@@ -1,35 +1,30 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import router from "./app/routes";
-import globalErrorhandler from "./app/middlewares/globalErroHandler";
-import notFound from "./app/middlewares/notFound";
-
+import globalErrorhandler from "./app/middleWare/globalErrorHandler";
+import notFound from "./app/middleWare/notFound";
+import router from "./app/router";
 const app: Application = express();
 
-app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:3000", "https://plantify-sand.vercel.app"],
     credentials: true,
   })
 );
+
+// parser
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Application route
 app.use("/api", router);
 
-app.get("/", (req: Request, res: Response) => {
-  res.status(200).json({
-    message: "Plantify Welcoming you",
-  });
+app.get("/", (req, res) => {
+  res.status(200).json("Welcome to the gardenig tips server");
 });
-
-// Global error handler
 app.use(globalErrorhandler);
-
-// 404 handler (Not Found) - place this at the end
+// not found route
 app.use(notFound);
 
 export default app;
